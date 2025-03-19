@@ -1,0 +1,24 @@
+# Ignore Terraform state files (DO NOT COMMIT THESE!)
+*.tfstate
+*.tfstate.backup
+terraform.tfstate.d/
+
+# Ignore Terraform working directory
+.terraform/
+
+# Ignore Terraform plan output files
+*.tfplan
+
+# Ignore sensitive credentials
+.env
+*.pem
+*.key
+
+# Ignore logs and cache
+logs/
+*.log
+.cache/
+
+# Optional: Ignore local overrides
+override.tf
+override.tf.json
