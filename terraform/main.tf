@@ -15,22 +15,13 @@ variable "openai_api_key" {}
 
 # Create a Resource Group
 resource "azurerm_resource_group" "rg" {
-  name     = "ai-gpt4o-mini-rg"
-  location = "East US 2"
+  name     = "rg-genai-sweden-central"
+  location = "Sweden Central"
 }
-
-# Create Application Insights for logging
-resource "azurerm_application_insights" "app_insights" {
-  name                = "ai-gpt4o-mini-insights"
-  location            = azurerm_resource_group.rg.location
-  resource_group_name = azurerm_resource_group.rg.name
-  application_type    = "web"
-}
-
 
 # Deploy Azure OpenAI Service
 resource "azurerm_cognitive_account" "openai_service" {
-  name                = "gpt4o-mini-service"
+  name                = "cog-genai-service"
   location            = azurerm_resource_group.rg.location
   resource_group_name = azurerm_resource_group.rg.name
   kind                = "OpenAI"
@@ -39,7 +30,7 @@ resource "azurerm_cognitive_account" "openai_service" {
 
 # Deploy GPT-4o-mini Model
 resource "azurerm_cognitive_deployment" "gpt4o_mini_deployment" {
-  name                 = "gpt-4o-mini-test"
+  name                 = "dep-gpt4o-mini"
   cognitive_account_id = azurerm_cognitive_account.openai_service.id
 
   model {
@@ -54,9 +45,27 @@ resource "azurerm_cognitive_deployment" "gpt4o_mini_deployment" {
   }
 }
 
+# Deploy DALL-E 3 Model
+resource "azurerm_cognitive_deployment" "dalle3_deployment" {
+  name                 = "dall-e-3"
+  cognitive_account_id = azurerm_cognitive_account.openai_service.id
+
+  model {
+    format  = "OpenAI"
+    name    = "dall-e-3"
+    version = "3.0"
+  }
+
+  sku {
+    name     = "Standard"
+    capacity = 1 # 1K Capacity Units (CU)
+  }
+}
+
+
 # Create a Storage Account for Function App
 resource "azurerm_storage_account" "storage" {
-  name                     = "storageazuregenai"
+  name                     = "stgenaifuncapp"
   resource_group_name      = azurerm_resource_group.rg.name
   location                 = azurerm_resource_group.rg.location
   account_tier             = "Standard"
@@ -65,15 +74,16 @@ resource "azurerm_storage_account" "storage" {
 
 # Create an App Service Plan (Consumption Plan)
 resource "azurerm_service_plan" "app_service_plan" {
-  name                = "aifunctionplan"
+  name                = "asp-genai-linux"
   resource_group_name = azurerm_resource_group.rg.name
   location            = azurerm_resource_group.rg.location
   os_type             = "Linux"
   sku_name            = "Y1"  # Change to "B1" for Basic Plan
 }
-# Update the Function App to enable Application Insights
+
+# Create Linux Function App
 resource "azurerm_linux_function_app" "function_app" {
-  name                       = "aiopenaifunction"
+  name                       = "func-genai-openai"
   location                   = azurerm_resource_group.rg.location
   resource_group_name        = azurerm_resource_group.rg.name
   service_plan_id            = azurerm_service_plan.app_service_plan.id
@@ -96,14 +106,12 @@ resource "azurerm_linux_function_app" "function_app" {
     "WEBSITE_NODE_DEFAULT_VERSION"   = "~20"  # Ensure Node.js 20 is set
     "OPENAI_API_KEY"                 = var.openai_api_key
     "OPENAI_ENDPOINT"                = "https://tuan-m8focyel-eastus2.openai.azure.com"
-    "DEPLOYMENT_NAME"                = "gpt-4o-mini-test"
+    "DEPLOYMENT_NAME"                = "dep-gpt4o-mini"
     "API_VERSION"                    = "2025-01-01-preview"
     "WEBSITE_RUN_FROM_PACKAGE"       = "1"
     "FUNCTIONS_EXTENSION_VERSION"    = "~4"
-    "APPLICATIONINSIGHTS_CONNECTION_STRING" = azurerm_application_insights.app_insights.connection_string
   }
 }
-
 
 # Output Function App URL
 output "function_app_url" {

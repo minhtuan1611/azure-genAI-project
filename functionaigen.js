@@ -1,54 +1,51 @@
-const { app } = require('@azure/functions')
-const fetch = require('node-fetch')
+const QRCode = require('qrcode')
+const { BlobServiceClient } = require('@azure/storage-blob')
+const connectionString = process.env.STORAGE_CONNECTION_STRING
 
-app.http('httpTrigger', {
-  methods: ['GET', 'POST'],
-  authLevel: 'anonymous',
-  handler: async (request, context) => {
-    context.log(`Http function processed request for url "${request.url}"`)
+module.exports = async function (context, req) {
+  context.log('Generating QR code')
 
-    const apiKey = process.env.OPENAI_API_KEY
-
-    if (!apiKey) {
-      context.log('API key is missing!')
-      return { status: 500, body: 'API key is missing' }
+  const url = req.query.url || (req.body && req.body.url)
+  if (!url) {
+    context.res = {
+      status: 400,
+      body: 'Please pass a url on the query string or in the request body',
     }
+    return
+  }
 
-    const openaiRequestBody = {
-      messages: [
-        { role: 'system', content: 'You are a helpful assistant.' },
-        { role: 'user', content: 'Hello, how many days in a month?' },
-      ],
-      max_tokens: 300,
+  try {
+    // Generate QR Code
+    const qrCodeData = await QRCode.toDataURL(url)
+
+    // Upload to Azure Blob Storage
+    const blobServiceClient =
+      BlobServiceClient.fromConnectionString(connectionString)
+    const containerName = 'qr-codes'
+    const containerClient = blobServiceClient.getContainerClient(containerName)
+    await containerClient.createIfNotExists({ access: 'blob' })
+
+    // Using regex to remove 'https://' from the URL
+    const modifiedUrl = url.replace(/^https?:\/\//, '')
+    const blobName = modifiedUrl + '.png'
+    const blockBlobClient = containerClient.getBlockBlobClient(blobName)
+
+    const matches = qrCodeData.match(/^data:([A-Za-z-+\/]+);base64,(.+)$/)
+    const buffer = Buffer.from(matches[2], 'base64')
+
+    await blockBlobClient.upload(buffer, buffer.length)
+
+    context.res = {
+      status: 200,
+      body: { qr_code_url: blockBlobClient.url },
+      headers: {
+        'Content-Type': 'application/json',
+      },
     }
-
-    // OpenAI API URL
-    const openaiUrl =
-      'https://tuan-m8focyel-eastus2.openai.azure.com/openai/deployments/gpt-4o-mini-test/chat/completions?api-version=2025-01-01-preview'
-
-    try {
-      // Make the POST request to OpenAI API
-      const response = await fetch(openaiUrl, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${apiKey}`,
-        },
-        body: JSON.stringify(openaiRequestBody),
-      })
-
-      if (!response.ok) {
-        context.log(`Error calling OpenAI API: ${response.statusText}`)
-        return { status: 500, body: 'Error calling OpenAI API' }
-      }
-
-      const data = await response.json()
-
-      context.log('OpenAI API response:', data)
-      return { body: `Response from AI: ${data.choices[0].message.content}` }
-    } catch (error) {
-      context.log('Error during OpenAI API call:', error)
-      return { status: 500, body: 'Failed to call OpenAI API' }
+  } catch (error) {
+    context.res = {
+      status: 500,
+      body: `Error: ${error.message}`,
     }
-  },
-})
+  }
+}
