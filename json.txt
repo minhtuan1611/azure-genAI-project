@@ -1,0 +1,9 @@
+https://tuan-m8focyel-eastus2.openai.azure.com/openai/deployments/gpt-4o-mini-test/chat/completions?api-version=2025-01-01-preview
+
+{
+    "messages": [
+        {"role": "system", "content": "You are a helpful assistant."},
+        {"role": "user", "content": "Hello, how many days in a month"}
+    ],
+    "max_tokens": 300
+}
