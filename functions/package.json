@@ -9,9 +9,7 @@
   "dependencies": {
     "@azure/storage-blob": "^12.27.0",
     "axios": "^1.8.4",
-    "qrcode": "^1.5.4",
-    "replicate": "^1.0.1",
-    "uuid": "^11.1.0"
+    "replicate": "^1.0.1"
   },
   "devDependencies": {
     "azure-functions-core-tools": "^4.x"

@@ -47,7 +47,7 @@ module.exports = async function (context, req) {
 
     // 2. Set up Blob Storage client
     const connectionString = process.env.STORAGE_CONNECTION_STRING
-    const containerName = 't2i-generated-images'
+    const containerName = 'im2im-generated-images'
     const blobServiceClient =
       BlobServiceClient.fromConnectionString(connectionString)
     const containerClient = blobServiceClient.getContainerClient(containerName)
@@ -62,7 +62,7 @@ module.exports = async function (context, req) {
         responseType: 'arraybuffer',
       })
       const imageBuffer = Buffer.from(imageResponse.data)
-      const blobName = `become-image-${Date.now()}.png`
+      const blobName = `gen-im-${Date.now()}.png`
       const blockBlobClient = containerClient.getBlockBlobClient(blobName)
       await blockBlobClient.upload(imageBuffer, imageBuffer.length)
       resultUrls.push(blockBlobClient.url)
