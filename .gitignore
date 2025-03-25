@@ -39,6 +39,7 @@ build/Release
 # Dependency directories
 node_modules/
 jspm_packages/
+.terraform/
 
 # TypeScript v1 declaration files
 typings/
@@ -97,3 +98,15 @@ local.settings.json
 __blobstorage__
 __queuestorage__
 __azurite_db*__.json
+
+# Ignore Terraform state files
+*.tfstate
+*.tfstate.*
+
+# Ignore Crash Logs
+crash.log
+
+# Ignore .terraform directory (plugin and provider cache)
+**/.terraform
+**/*.tfstate
+**/*.tfstate.*
