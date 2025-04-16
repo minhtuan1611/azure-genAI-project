@@ -110,3 +110,4 @@ crash.log
 **/.terraform
 **/*.tfstate
 **/*.tfstate.*
+**/.terraform.lock.hcl

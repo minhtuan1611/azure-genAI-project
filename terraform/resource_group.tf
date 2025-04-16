@@ -1,4 +1,4 @@
-resource "azurerm_resource_group" "rg-web-app" {
-  name     = "rg-genai-west-europe"
-  location = "West Europe"
+resource "azurerm_resource_group" "image_genai_rg" {
+  name     = "image-genai-rg"
+  location = var.location
 }
