@@ -111,3 +111,5 @@ crash.log
 **/*.tfstate
 **/*.tfstate.*
 **/.terraform.lock.hcl
+.vscode/
+.DS_Store
